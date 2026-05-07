@@ -468,7 +468,7 @@ if st.session_state.get("page") == "part_b":
 # =====================================================
 elif st.session_state.page == "part_c":
 
-    st.markdown("<h1 style='text-align:center;'>🟧Part C: Simulating Fault Detection in Large-Scale Photovoltaic System</h1>", unsafe_allow_html=True)
+    st.markdown("<h1 style='text-align:center;'>⚡Part C: Simulating Fault Detection in Large-Scale Photovoltaic System</h1>", unsafe_allow_html=True)
     st.markdown("---")
 
     # BACK BUTTON
