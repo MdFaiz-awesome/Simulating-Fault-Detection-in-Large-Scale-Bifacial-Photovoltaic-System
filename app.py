@@ -21,8 +21,8 @@ st.set_page_config(
 if "page" not in st.session_state:
     st.session_state.page = "welcome"
 
-def switch_to_dimensioning():
-    st.session_state.page = "dimensioning"
+def switch_to_part_a():
+    st.session_state.page = "part_a"
 
 def switch_to_part_b():
     st.session_state.page = "part_b"
@@ -95,11 +95,11 @@ if st.session_state.page == "welcome":
         st.rerun()
 
 # =====================================================
-# PAGE 2: DIMENSIONING PAGE (PART A)
+# PART A: DIMENSIONING OF PV MODULES
 # =====================================================
-elif st.session_state.page == "dimensioning":
+elif st.session_state.page == "part a":
 
-    st.markdown("<h1 style='text-align:center;'>📘 Dimensioning of PV Modules</h1>", unsafe_allow_html=True)
+    st.markdown("<h1 style='text-align:center;'>📘Part A: Dimensioning of PV Modules</h1>", unsafe_allow_html=True)
     st.write("Follow the structured technical steps below to complete your PV sizing process.")
     st.markdown("---")
 
@@ -282,7 +282,7 @@ elif st.session_state.page == "dimensioning":
 # PART B: SIZING WITH CENTRAL INVERTER
 # =====================================================
 elif st.session_state.get("page") == "part_b":
-    st.markdown("<h1 style='text-align:center;'>Part B: Sizing with Central Inverter</h1>", unsafe_allow_html=True)
+    st.markdown("<h1 style='text-align:center;'>🟩Part B: Sizing with Central Inverter</h1>", unsafe_allow_html=True)
     st.markdown("---")
 
     # BUTTON BACK TO PART A
@@ -457,7 +457,13 @@ elif st.session_state.get("page") == "part_b":
         """, unsafe_allow_html=True)
     st.success(f"Total Strings Required = {result_config}  |  Selected Modules in Series = {ns_rec}")
 
-    if st.button("👉 Continue to Part c", use_container_width=True):
+st.markdown("<br>", unsafe_allow_html=True)
+if st.button("👉 Continue to Part B", use_container_width=True):
+        st.rerun()
+
+# =====================================================
+# PART C: SIMULATING FAULT DETECTION
+# =====================================================
 
 elif st.session_state.get("page") == "part_c":
     st.markdown("<h1 style='text-align:center;'>Part C: Simulating Fault Detection in Large-Scale Photovoltaic System</h1>", unsafe_allow_html=True)
