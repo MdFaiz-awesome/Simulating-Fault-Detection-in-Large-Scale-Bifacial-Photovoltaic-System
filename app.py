@@ -10,7 +10,7 @@ import plotly.graph_objects as go
 # PAGE CONFIGURATION
 # -----------------------------------------------------
 st.set_page_config(
-    page_title="PV Sizing Tool",
+    page_title="Large Scale PV Tool",
     page_icon="🔆",
     layout="wide"
 )
@@ -21,8 +21,8 @@ st.set_page_config(
 if "page" not in st.session_state:
     st.session_state.page = "welcome"
 
-def switch_to_dimensioning():
-    st.session_state.page = "dimensioning"
+def switch_to_part_a():
+    st.session_state.page = "part_a"
 
 def switch_to_part_b():
     st.session_state.page = "part_b"
@@ -88,8 +88,8 @@ if st.session_state.page == "welcome":
     st.markdown("<br><br>", unsafe_allow_html=True)
 
     # START BUTTON
-    if st.button("👉 Start Sizing Tool", use_container_width=True):
-        with st.spinner("Loading PV Sizing Dashboard..."):
+    if st.button("👉 Start Now", use_container_width=True):
+        with st.spinner("Loading Large Scale PV Dashboard..."):
             time.sleep(2)
         switch_to_dimensioning()
         st.rerun()
@@ -97,9 +97,9 @@ if st.session_state.page == "welcome":
 # =====================================================
 # PAGE 2: DIMENSIONING PAGE (PART A)
 # =====================================================
-elif st.session_state.page == "dimensioning":
+elif st.session_state.page == "part_a":
 
-    st.markdown("<h1 style='text-align:center;'>📘 Dimensioning of PV Modules</h1>", unsafe_allow_html=True)
+    st.markdown("<h1 style='text-align:center;'>📘Part A: Dimensioning of PV Modules</h1>", unsafe_allow_html=True)
     st.write("Follow the structured technical steps below to complete your PV sizing process.")
     st.markdown("---")
 
@@ -282,7 +282,7 @@ elif st.session_state.page == "dimensioning":
 # PART B: SIZING WITH CENTRAL INVERTER
 # =====================================================
 if st.session_state.get("page") == "part_b":
-    st.markdown("<h1 style='text-align:center;'>Part B: Sizing with Central Inverter</h1>", unsafe_allow_html=True)
+    st.markdown("<h1 style='text-align:center;'>🟥Part B: Sizing with Central Inverter</h1>", unsafe_allow_html=True)
     st.markdown("---")
 
     # BUTTON BACK TO PART A
@@ -468,7 +468,7 @@ if st.session_state.get("page") == "part_b":
 # =====================================================
 elif st.session_state.page == "part_c":
 
-    st.markdown("<h1 style='text-align:center;'>Part C: Simulating Fault Detection in Large-Scale Photovoltaic System</h1>", unsafe_allow_html=True)
+    st.markdown("<h1 style='text-align:center;'>🟧Part C: Simulating Fault Detection in Large-Scale Photovoltaic System</h1>", unsafe_allow_html=True)
     st.markdown("---")
 
     # BACK BUTTON
@@ -595,3 +595,9 @@ elif st.session_state.page == "part_c":
     })
 
     st.dataframe(df, use_container_width=True)
+
+# ========================= 
+# DOWNLOAD 
+# ========================= 
+csv = df.to_csv(index=False).encode("utf-8") 
+st.download_button("Download CSV", csv, "pv_fault_data.csv","text/csv")
