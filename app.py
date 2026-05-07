@@ -457,7 +457,6 @@ elif st.session_state.get("page") == "part_b":
         """, unsafe_allow_html=True)
     st.success(f"Total Strings Required = {result_config}  |  Selected Modules in Series = {ns_rec}")
 
-  st.markdown("<br>", unsafe_allow_html=True)
     if st.button("👉 Continue to Part c", use_container_width=True):
 
 elif st.session_state.get("page") == "part_c":
