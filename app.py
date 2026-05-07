@@ -1,187 +1,256 @@
-import streamlit as st
-import time
+# app.py
+# Streamlit Dashboard: PV Farm + RoCoP Analysis
+# Save this file as app.py
+# Run locally: streamlit run app.py
 
-# =========================
+import numpy as np
+import pandas as pd
+import streamlit as st
+import plotly.graph_objects as go
+
+# =====================================================
 # PAGE CONFIG
-# =========================
+# =====================================================
 st.set_page_config(
-    page_title="Addition Dashboard",
-    page_icon="➕",
+    page_title="PV Farm RoCoP Dashboard",
     layout="wide"
 )
 
-# =========================
-# CSS (ANIMATIONS + UI STYLE)
-# =========================
-st.markdown("""
-    <style>
+st.title("PV Farm RoCoP Monitoring Dashboard")
+st.markdown("Interactive PV Farm Simulation with Multi-Area Fault Detection")
 
-        /* Fade-in animation */
-        @keyframes fadeIn {
-            from {opacity: 0; transform: translateY(10px);}
-            to {opacity: 1; transform: translateY(0);}
-        }
+# =====================================================
+# SIDEBAR SETTINGS
+# =====================================================
+st.sidebar.header("Simulation Settings")
 
-        /* Slide-in animation */
-        @keyframes slideIn {
-            from {opacity: 0; transform: translateX(-20px);}
-            to {opacity: 1; transform: translateX(0);}
-        }
+start_hour = st.sidebar.number_input("Start Hour", value=9.0)
+end_hour = st.sidebar.number_input("End Hour", value=10.0)
 
-        .main-title {
-            font-size: 40px;
-            font-weight: 700;
-            color: #1A5276;
-            text-align: center;
-            margin-bottom: 10px;
-            animation: fadeIn 1s ease-in-out;
-        }
-        .section-title {
-            font-size: 22px;
-            font-weight: 600;
-            color: #154360;
-            margin-top: 20px;
-            animation: fadeIn 1.2s ease-in-out;
-        }
-        .result-box {
-            background-color: #E8F6F3;
-            padding: 20px;
-            border-radius: 12px;
-            border: 1px solid #D1F2EB;
-            text-align: center;
-            font-size: 26px;
-            color: #0B5345;
-            font-weight: bold;
-            margin-top: 10px;
-            animation: slideIn 0.8s ease-out;
-        }
-        .history-box {
-            background-color: #FEF9E7;
-            padding: 15px;
-            border-radius: 10px;
-            border: 1px solid #F9E79F;
-            font-size: 16px;
-            color: #7D6608;
-            margin-top: 10px;
-            animation: fadeIn 0.6s ease;
-        }
+dt = st.sidebar.selectbox("Time Resolution (seconds)", [1, 5, 10], index=0)
 
-        /* Hover animation */
-        .history-box:hover {
-            background-color: #FCF3CF;
-            transform: scale(1.02);
-            transition: 0.2s;
-        }
-
-        /* Icon styling */
-        .icon-big {
-            font-size: 60px;
-            text-align: center;
-            animation: fadeIn 1s ease;
-        }
-
-    </style>
-""", unsafe_allow_html=True)
-
-
-# =========================
-# SIDEBAR NAVIGATION
-# =========================
-st.sidebar.title("📊 Dashboard Navigation")
-menu = st.sidebar.radio(
-    "Menu",
-    ["Calculator", "History Log", "About Project"]
+fault_areas = st.sidebar.multiselect(
+    "Select Fault Areas",
+    ["A", "B", "C"],
+    default=["B"]
 )
 
+fault_time = st.sidebar.slider(
+    "Fault Start Time",
+    min_value=float(start_hour),
+    max_value=float(end_hour),
+    value=9.5,
+    step=0.01
+)
 
-# =========================
-# SESSION STATE (HISTORY)
-# =========================
-if "history" not in st.session_state:
-    st.session_state.history = []
+irradiance_fault = st.sidebar.slider(
+    "Fault Irradiance (W/m²)",
+    0,
+    1000,
+    200
+)
 
+noise_level = st.sidebar.slider(
+    "Noise Level (%)",
+    0.0,
+    1.0,
+    0.2
+) / 100
 
-# =========================
-# MAIN CONTENT
-# =========================
+# =====================================================
+# PV PARAMETERS
+# =====================================================
+P_panel = 605
+alpha = -0.23 / 100
+T = 25
 
-if menu == "Calculator":
+N_series = 160
+N_parallel = 84
 
-    st.markdown('<p class="icon-big">➕</p>', unsafe_allow_html=True)
-    st.markdown('<p class="main-title">Addition Calculator Dashboard</p>', unsafe_allow_html=True)
-    st.markdown("### Masukkan dua nombor untuk membuat kiraan tambah")
+N_total = N_series * N_parallel
+N_area = N_total // 3
+P_area = N_area * P_panel
 
-    col1, col2 = st.columns(2)
+# =====================================================
+# TIME VECTOR
+# =====================================================
+time_seconds = np.arange(0, (end_hour - start_hour) * 3600, dt)
+time_hours = start_hour + time_seconds / 3600
 
-    with col1:
-        num1 = st.number_input("🔢 Nombor Pertama", value=0.0)
+# =====================================================
+# FUNCTIONS
+# =====================================================
+def irradiance_profile(area):
+    G = np.ones_like(time_hours) * 1000
 
-    with col2:
-        num2 = st.number_input("🔢 Nombor Kedua", value=0.0)
+    if area in fault_areas:
+        G[time_hours >= fault_time] = irradiance_fault
 
-    # Button
-    if st.button("🚀 Calculate"):
-
-        # LOADING SPINNER ANIMATION
-        with st.spinner("Sedang mengira... ⏳"):
-            time.sleep(1.5)  # simulate processing delay
-            result = num1 + num2
-
-        # CONFETTI CELEBRATION
-        st.balloons()
-
-        # Result Box
-        st.markdown(f"""
-            <div class="result-box">
-                📘 Hasil Tambah:<br><br> {result}
-            </div>
-        """, unsafe_allow_html=True)
-
-        # Save into history
-        st.session_state.history.append(f"{num1} + {num2} = {result}")
-
-
-elif menu == "History Log":
-
-    st.markdown('<p class="icon-big">📝</p>', unsafe_allow_html=True)
-    st.markdown('<p class="main-title">Calculation History Log</p>', unsafe_allow_html=True)
-
-    if len(st.session_state.history) == 0:
-        st.info("Belum ada rekod kiraan.")
-    else:
-        for record in st.session_state.history:
-            st.markdown(f"""
-                <div class="history-box">
-                    📌 {record}
-                </div>
-            """, unsafe_allow_html=True)
+    return G
 
 
-elif menu == "About Project":
+def pv_power(G):
+    return P_area * (G / 1000) * (1 - alpha * (T - 25))
 
-    st.markdown('<p class="icon-big">📘</p>', unsafe_allow_html=True)
-    st.markdown('<p class="main-title">Project Information</p>', unsafe_allow_html=True)
 
-    st.markdown("""
-        ## 🎯 Tujuan Dashboard  
-        Dashboard ini dibangunkan sebagai contoh aplikasi Python berbasis Streamlit dengan UI profesional,  
-        animasi, serta fungsi log yang berkualiti untuk tugasan universiti dan projek sebenar.
+def rocop(P):
+    return np.abs(np.diff(P)) / dt
 
-        ## 🎆 Ciri Terbaru  
-        - ⏳ **Loading animation** semasa mengira  
-        - 🎉 **Confetti celebration** selepas kiraan berjaya  
-        - 💎 UI premium dengan CSS animations  
 
-        ## 🛠 Teknologi Digunakan  
-        - **Python**
-        - **Streamlit**
-        - **Custom CSS Animations**
-        - **Session State History Tracking**
+def classify(R, T1, T2):
+    labels = []
+    for r in R:
+        if r < T1:
+            labels.append("Normal")
+        elif r < T2:
+            labels.append("Shading")
+        else:
+            labels.append("Fault")
+    return labels
 
-        ## 🎓 Sesuai Untuk:
-        - Assignment Python  
-        - Projek mini  
-        - FYP prototaip UI  
-        - Dashboard pembelajaran  
-        - Demo profesional untuk presentation  
-    """)
+# =====================================================
+# SIMULATION
+# =====================================================
+P_A = pv_power(irradiance_profile("A"))
+P_B = pv_power(irradiance_profile("B"))
+P_C = pv_power(irradiance_profile("C"))
+
+P_total = P_A + P_B + P_C
+
+# Noise
+P_total += noise_level * P_total.max() * np.random.randn(len(P_total))
+
+# RoCoP
+R = rocop(P_total)
+t_rocop = time_hours[1:]
+
+# Threshold
+R_normal_sample = R[:100]
+T1 = np.max(R_normal_sample) * 1.5
+T2 = T1 * 5
+
+labels = classify(R, T1, T2)
+
+# =====================================================
+# KPI METRICS
+# =====================================================
+col1, col2, col3, col4 = st.columns(4)
+
+col1.metric("Total Panels", f"{N_total:,}")
+col2.metric("Rated Power", f"{(N_total*P_panel)/1e6:.2f} MW")
+col3.metric("Fault Areas", ", ".join(fault_areas) if fault_areas else "None")
+col4.metric("Max RoCoP", f"{np.max(R):,.0f} W/s")
+
+# =====================================================
+# GRAPH 1 TOTAL POWER
+# =====================================================
+fig1 = go.Figure()
+
+fig1.add_trace(go.Scatter(
+    x=time_hours,
+    y=P_total,
+    mode="lines",
+    name="Total Power"
+))
+
+fig1.add_vline(
+    x=fault_time,
+    line_dash="dash",
+    line_color="red"
+)
+
+fig1.update_layout(
+    title="Total PV Farm Power",
+    xaxis_title="Time (Hour)",
+    yaxis_title="Power (W)",
+    hovermode="x unified"
+)
+
+st.plotly_chart(fig1, use_container_width=True)
+
+# =====================================================
+# GRAPH 2 AREA POWER
+# =====================================================
+fig2 = go.Figure()
+
+fig2.add_trace(go.Scatter(x=time_hours, y=P_A, mode="lines", name="Area A"))
+fig2.add_trace(go.Scatter(x=time_hours, y=P_B, mode="lines", name="Area B"))
+fig2.add_trace(go.Scatter(x=time_hours, y=P_C, mode="lines", name="Area C"))
+
+fig2.add_vline(
+    x=fault_time,
+    line_dash="dash",
+    line_color="red"
+)
+
+fig2.update_layout(
+    title="Power by Area",
+    xaxis_title="Time (Hour)",
+    yaxis_title="Power (W)",
+    hovermode="x unified"
+)
+
+st.plotly_chart(fig2, use_container_width=True)
+
+# =====================================================
+# GRAPH 3 ROCOP
+# =====================================================
+fig3 = go.Figure()
+
+fig3.add_trace(go.Scatter(
+    x=t_rocop,
+    y=R,
+    mode="lines",
+    name="RoCoP"
+))
+
+fig3.add_vline(
+    x=fault_time,
+    line_dash="dash",
+    line_color="red"
+)
+
+fig3.update_layout(
+    title="RoCoP Analysis",
+    xaxis_title="Time (Hour)",
+    yaxis_title="RoCoP (W/s)",
+    hovermode="x unified"
+)
+
+st.plotly_chart(fig3, use_container_width=True)
+
+# =====================================================
+# TABLE DATA
+# =====================================================
+st.subheader("Simulation Data")
+
+df = pd.DataFrame({
+    "Time (Hour)": time_hours,
+    "Total Power (W)": P_total,
+    "Area A (W)": P_A,
+    "Area B (W)": P_B,
+    "Area C (W)": P_C
+})
+
+st.dataframe(df, use_container_width=True)
+
+# =====================================================
+# CLASSIFICATION SUMMARY
+# =====================================================
+st.subheader("RoCoP Classification Summary")
+
+summary = pd.Series(labels).value_counts()
+
+st.write(summary)
+
+# =====================================================
+# DOWNLOAD CSV
+# =====================================================
+csv = df.to_csv(index=False).encode("utf-8")
+
+st.download_button(
+    "Download CSV Data",
+    csv,
+    "pv_farm_data.csv",
+    "text/csv"
+)
