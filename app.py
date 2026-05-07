@@ -455,6 +455,7 @@ if st.session_state.get("page") == "part_b":
             <h4>Final Configuration Summary</h4>
         </div>
         """, unsafe_allow_html=True)
+    
     st.success(f"Total Strings Required = {result_config}  |  Selected Modules in Series = {ns_rec}")
 
     if st.button("👉 Continue to Part C", use_container_width=True):
