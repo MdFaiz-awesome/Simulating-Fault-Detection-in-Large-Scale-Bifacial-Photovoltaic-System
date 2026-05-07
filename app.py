@@ -91,7 +91,7 @@ if st.session_state.page == "welcome":
     if st.button("👉 Start Now", use_container_width=True):
         with st.spinner("Loading Large Scale PV Dashboard..."):
             time.sleep(2)
-        switch_to_dimensioning()
+        switch_to_part_a()
         st.rerun()
 
 # =====================================================
@@ -595,3 +595,9 @@ elif st.session_state.page == "part_c":
     })
 
     st.dataframe(df, use_container_width=True)
+
+# ========================= 
+# DOWNLOAD 
+# ========================= 
+csv = df.to_csv(index=False).encode("utf-8") 
+st.download_button("Download CSV", csv, "pv_fault_data.csv", "text/csv")
