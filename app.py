@@ -457,16 +457,15 @@ if st.session_state.get("page") == "part_b":
         """, unsafe_allow_html=True)
     st.success(f"Total Strings Required = {result_config}  |  Selected Modules in Series = {ns_rec}")
 
-if st.button("👉 Continue to Part C", use_container_width=True):
-    st.session_state.best_count = best_count
-    st.session_state.rated_power = rated_power
-    st.session_state.page = "part_c"
-    st.rerun()
+    if st.button("👉 Continue to Part C", use_container_width=True):
+        st.session_state.best_count = best_count
+        st.session_state.rated_power = rated_power
+        st.session_state.page = "part_c"
+        st.rerun()
    
 # =====================================================
 # PART C: FAULT SIMULATION (RoCoP)
 # =====================================================
-dt = max(dt, 1)
 elif st.session_state.page == "part_c":
 
     st.markdown("<h1 style='text-align:center;'>Part C: Simulating Fault Detection in Large-Scale Photovoltaic System</h1>", unsafe_allow_html=True)
@@ -478,14 +477,14 @@ elif st.session_state.page == "part_c":
         st.rerun()
 
     # =========================
-    # LOAD DATA FROM PART A
+    # LOAD DATA
     # =========================
-best_count = st.session_state.get("best_count")
-rated_power = st.session_state.get("rated_power")
+    best_count = st.session_state.get("best_count", 0)
+    rated_power = st.session_state.get("rated_power", 0)
 
-if best_count is None or rated_power is None:
-    st.error("Missing Part A data. Please restart.")
-    st.stop()
+    if best_count == 0 or rated_power == 0:
+        st.error("Missing Part A data. Please restart.")
+        st.stop()
 
     # =========================
     # SIDEBAR SETTINGS
@@ -537,13 +536,14 @@ if best_count is None or rated_power is None:
     P_total += noise_level * np.max(P_total) * np.random.randn(len(P_total))
 
     # =========================
-    # RoCoP
+    # RoCoP (FIXED)
     # =========================
-  if len(P_total) > 1:
-    R = np.abs(np.diff(P_total)) / dt
-else:
-    R = np.array([0])
-    tR = time_hours[1:] if len(time_hours) > 1 else time_hours
+    if len(P_total) > 1:
+        R = np.abs(np.diff(P_total)) / dt
+        tR = time_hours[1:]
+    else:
+        R = np.array([0])
+        tR = time_hours
 
     # thresholds
     T1 = np.max(R[:min(100, len(R))]) * 1.5 if len(R) > 1 else 0
@@ -558,35 +558,29 @@ else:
     c1.metric("Total Panels", f"{best_count:,}")
     c2.metric("Plant Size", f"{(best_count * rated_power)/1e6:.2f} MW")
     c3.metric("Fault Areas", ", ".join(fault_areas) if fault_areas else "None")
-    c4.metric("Max RoCoP", f"{np.max(R):,.2f}" if len(R) > 0 else "0")
+    c4.metric("Max RoCoP", f"{np.max(R):,.2f}")
 
     # =========================
-    # PLOT 1
+    # PLOTS
     # =========================
     fig = go.Figure()
     fig.add_trace(go.Scatter(x=time_hours, y=P_total, name="Total Power"))
     fig.add_vline(x=fault_time, line_dash="dash", line_color="red")
-    fig.update_layout(title="Total PV Power", hovermode="x unified")
+    fig.update_layout(title="Total PV Power")
     st.plotly_chart(fig, use_container_width=True)
 
-    # =========================
-    # PLOT 2
-    # =========================
     fig2 = go.Figure()
-    fig2.add_trace(go.Scatter(x=time_hours, y=P_A, name="Area A"))
-    fig2.add_trace(go.Scatter(x=time_hours, y=P_B, name="Area B"))
-    fig2.add_trace(go.Scatter(x=time_hours, y=P_C, name="Area C"))
+    fig2.add_trace(go.Scatter(x=time_hours, y=P_A, name="A"))
+    fig2.add_trace(go.Scatter(x=time_hours, y=P_B, name="B"))
+    fig2.add_trace(go.Scatter(x=time_hours, y=P_C, name="C"))
     fig2.add_vline(x=fault_time, line_dash="dash", line_color="red")
-    fig2.update_layout(title="Power by Area", hovermode="x unified")
+    fig2.update_layout(title="Area Power")
     st.plotly_chart(fig2, use_container_width=True)
 
-    # =========================
-    # RoCoP
-    # =========================
     fig3 = go.Figure()
     fig3.add_trace(go.Scatter(x=tR, y=R, name="RoCoP"))
     fig3.add_vline(x=fault_time, line_dash="dash", line_color="red")
-    fig3.update_layout(title="RoCoP Analysis", hovermode="x unified")
+    fig3.update_layout(title="RoCoP Analysis")
     st.plotly_chart(fig3, use_container_width=True)
 
     # =========================
@@ -595,15 +589,9 @@ else:
     df = pd.DataFrame({
         "Time": time_hours,
         "Total Power": P_total,
-        "Area A": P_A,
-        "Area B": P_B,
-        "Area C": P_C
+        "A": P_A,
+        "B": P_B,
+        "C": P_C
     })
 
     st.dataframe(df, use_container_width=True)
-
-    # =========================
-    # DOWNLOAD
-    # =========================
-    csv = df.to_csv(index=False).encode("utf-8")
-    st.download_button("Download CSV", csv, "pv_fault_data.csv", "text/csv")
