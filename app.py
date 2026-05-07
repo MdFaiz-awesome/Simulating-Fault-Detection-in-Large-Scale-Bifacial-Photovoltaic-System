@@ -595,18 +595,3 @@ elif st.session_state.page == "part_c":
     })
 
     st.dataframe(df, use_container_width=True)
-
-from datetime import datetime
-
-st.markdown("### 📥 Download Simulation Data")
-
-file_name = f"pv_fault_data_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv"
-
-csv = df.to_csv(index=False).encode("utf-8")
-
-st.download_button(
-    label="Download CSV",
-    data=csv,
-    file_name=file_name,
-    mime="text/csv"
-)
