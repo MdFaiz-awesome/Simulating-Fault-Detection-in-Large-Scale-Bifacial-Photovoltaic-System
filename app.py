@@ -27,9 +27,6 @@ def switch_to_dimensioning():
 def switch_to_part_b():
     st.session_state.page = "part_b"
     
-def switch_to_part_c():
-    st.session_state.page = "part_c"
-
 # -----------------------------------------------------
 # SET FIXED BACKGROUND IMAGE (ONLY FOR HOME PAGE)
 # -----------------------------------------------------
