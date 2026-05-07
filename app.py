@@ -26,6 +26,9 @@ def switch_to_dimensioning():
 
 def switch_to_part_b():
     st.session_state.page = "part_b"
+
+def switch_to_part_c():
+    st.session_state.page = "part_c"
     
 # -----------------------------------------------------
 # SET FIXED BACKGROUND IMAGE (ONLY FOR HOME PAGE)
@@ -278,7 +281,7 @@ elif st.session_state.page == "dimensioning":
 # =====================================================
 # PART B: SIZING WITH CENTRAL INVERTER
 # =====================================================
-if st.session_state.get("page") == "part_b":
+elif st.session_state.get("page") == "part_b":
     st.markdown("<h1 style='text-align:center;'>Part B: Sizing with Central Inverter</h1>", unsafe_allow_html=True)
     st.markdown("---")
 
@@ -453,14 +456,18 @@ if st.session_state.get("page") == "part_b":
         </div>
         """, unsafe_allow_html=True)
     st.success(f"Total Strings Required = {result_config}  |  Selected Modules in Series = {ns_rec}")
-    
-if st.button("Continue to Part C", use_container_width=True):
-    st.session_state.page = "part_c"
-    st.rerun()
 
-if st.session_state.page=='part_c':
-    st.title('Part 3: Simulating Fault Detection in Large-Scale Photovoltaic System')
-    st.markdown('Integrated PV Farm RoCoP Dashboard')
+  st.markdown("<br>", unsafe_allow_html=True)
+    if st.button("👉 Continue to Part c", use_container_width=True):
+
+elif st.session_state.get("page") == "part_c":
+    st.markdown("<h1 style='text-align:center;'>Part C: Simulating Fault Detection in Large-Scale Photovoltaic System</h1>", unsafe_allow_html=True)
+    st.markdown("---")
+
+    # BUTTON BACK TO PART A
+    if st.button("⬅️ Back to Part A", use_container_width=True):
+        st.session_state.page = "dimensioning"
+        st.rerun()
 
     best_count = st.session_state.get('best_count', 13440)
     rated_power = st.session_state.get('rated_power', 605)
