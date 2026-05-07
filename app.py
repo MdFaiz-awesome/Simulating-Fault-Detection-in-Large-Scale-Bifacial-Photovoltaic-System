@@ -26,6 +26,9 @@ def switch_to_dimensioning():
 
 def switch_to_part_b():
     st.session_state.page = "part_b"
+    
+def switch_to_part_c():
+    st.session_state.page = "part_c"
 
 # -----------------------------------------------------
 # SET FIXED BACKGROUND IMAGE (ONLY FOR HOME PAGE)
@@ -454,8 +457,9 @@ if st.session_state.get("page") == "part_b":
         """, unsafe_allow_html=True)
     st.success(f"Total Strings Required = {result_config}  |  Selected Modules in Series = {ns_rec}")
     
-if 'page' not in st.session_state:
-    st.session_state.page='part_c'
+if st.button("Continue to Part C", use_container_width=True):
+    st.session_state.page = "part_c"
+    st.rerun()
 
 if st.session_state.page=='part_c':
     st.title('Part 3: Simulating Fault Detection in Large-Scale Photovoltaic System')
