@@ -595,3 +595,11 @@ elif st.session_state.page == "part_c":
     })
 
     st.dataframe(df, use_container_width=True)
+
+st.download_button(
+    label="📊 Export Fault Simulation Data (CSV)",
+    data=csv,
+    file_name="pv_fault_data.csv",
+    mime="text/csv",
+    use_container_width=True
+)
