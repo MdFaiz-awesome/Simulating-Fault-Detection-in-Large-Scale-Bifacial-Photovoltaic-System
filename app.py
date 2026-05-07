@@ -1,8 +1,3 @@
-# app.py
-# Streamlit Dashboard: PV Farm + RoCoP Analysis
-# Save this file as app.py
-# Run locally: streamlit run app.py
-
 import numpy as np
 import pandas as pd
 import streamlit as st
@@ -13,21 +8,29 @@ import plotly.graph_objects as go
 # =====================================================
 st.set_page_config(
     page_title="PV Farm RoCoP Dashboard",
+    page_icon="⚡",
     layout="wide"
 )
 
-st.title("PV Farm RoCoP Monitoring Dashboard")
-st.markdown("Interactive PV Farm Simulation with Multi-Area Fault Detection")
+# =====================================================
+# TITLE
+# =====================================================
+st.title("⚡ PV Farm RoCoP Monitoring Dashboard")
+st.markdown("Interactive Simulation for Large Scale Bifacial Photovoltaic Fault Detection")
 
 # =====================================================
 # SIDEBAR SETTINGS
 # =====================================================
-st.sidebar.header("Simulation Settings")
+st.sidebar.header("⚙️ Simulation Settings")
 
 start_hour = st.sidebar.number_input("Start Hour", value=9.0)
 end_hour = st.sidebar.number_input("End Hour", value=10.0)
 
-dt = st.sidebar.selectbox("Time Resolution (seconds)", [1, 5, 10], index=0)
+dt = st.sidebar.selectbox(
+    "Time Resolution (seconds)",
+    [1, 5, 10],
+    index=0
+)
 
 fault_areas = st.sidebar.multiselect(
     "Select Fault Areas",
@@ -45,16 +48,16 @@ fault_time = st.sidebar.slider(
 
 irradiance_fault = st.sidebar.slider(
     "Fault Irradiance (W/m²)",
-    0,
-    1000,
-    200
+    min_value=0,
+    max_value=1000,
+    value=200
 )
 
 noise_level = st.sidebar.slider(
     "Noise Level (%)",
-    0.0,
-    1.0,
-    0.2
+    min_value=0.0,
+    max_value=1.0,
+    value=0.2
 ) / 100
 
 # =====================================================
@@ -69,6 +72,7 @@ N_parallel = 84
 
 N_total = N_series * N_parallel
 N_area = N_total // 3
+
 P_area = N_area * P_panel
 
 # =====================================================
@@ -99,6 +103,7 @@ def rocop(P):
 
 def classify(R, T1, T2):
     labels = []
+
     for r in R:
         if r < T1:
             labels.append("Normal")
@@ -106,7 +111,9 @@ def classify(R, T1, T2):
             labels.append("Shading")
         else:
             labels.append("Fault")
+
     return labels
+
 
 # =====================================================
 # SIMULATION
@@ -117,7 +124,7 @@ P_C = pv_power(irradiance_profile("C"))
 
 P_total = P_A + P_B + P_C
 
-# Noise
+# Add noise
 P_total += noise_level * P_total.max() * np.random.randn(len(P_total))
 
 # RoCoP
@@ -126,18 +133,21 @@ t_rocop = time_hours[1:]
 
 # Threshold
 R_normal_sample = R[:100]
+
 T1 = np.max(R_normal_sample) * 1.5
 T2 = T1 * 5
 
 labels = classify(R, T1, T2)
 
 # =====================================================
-# KPI METRICS
+# KPI SECTION
 # =====================================================
+st.subheader("📌 System Overview")
+
 col1, col2, col3, col4 = st.columns(4)
 
 col1.metric("Total Panels", f"{N_total:,}")
-col2.metric("Rated Power", f"{(N_total*P_panel)/1e6:.2f} MW")
+col2.metric("Rated Capacity", f"{(N_total * P_panel)/1e6:.2f} MW")
 col3.metric("Fault Areas", ", ".join(fault_areas) if fault_areas else "None")
 col4.metric("Max RoCoP", f"{np.max(R):,.0f} W/s")
 
@@ -173,9 +183,26 @@ st.plotly_chart(fig1, use_container_width=True)
 # =====================================================
 fig2 = go.Figure()
 
-fig2.add_trace(go.Scatter(x=time_hours, y=P_A, mode="lines", name="Area A"))
-fig2.add_trace(go.Scatter(x=time_hours, y=P_B, mode="lines", name="Area B"))
-fig2.add_trace(go.Scatter(x=time_hours, y=P_C, mode="lines", name="Area C"))
+fig2.add_trace(go.Scatter(
+    x=time_hours,
+    y=P_A,
+    mode="lines",
+    name="Area A"
+))
+
+fig2.add_trace(go.Scatter(
+    x=time_hours,
+    y=P_B,
+    mode="lines",
+    name="Area B"
+))
+
+fig2.add_trace(go.Scatter(
+    x=time_hours,
+    y=P_C,
+    mode="lines",
+    name="Area C"
+))
 
 fig2.add_vline(
     x=fault_time,
@@ -184,7 +211,7 @@ fig2.add_vline(
 )
 
 fig2.update_layout(
-    title="Power by Area",
+    title="PV Farm Power by Area",
     xaxis_title="Time (Hour)",
     yaxis_title="Power (W)",
     hovermode="x unified"
@@ -220,9 +247,37 @@ fig3.update_layout(
 st.plotly_chart(fig3, use_container_width=True)
 
 # =====================================================
-# TABLE DATA
+# FAULT STATUS
 # =====================================================
-st.subheader("Simulation Data")
+st.subheader("⚠️ Fault Status")
+
+status_data = []
+
+for area in ["A", "B", "C"]:
+    if area in fault_areas:
+        status = "FAULT"
+    else:
+        status = "NORMAL"
+
+    status_data.append([area, status])
+
+status_df = pd.DataFrame(status_data, columns=["Area", "Status"])
+
+st.table(status_df)
+
+# =====================================================
+# CLASSIFICATION SUMMARY
+# =====================================================
+st.subheader("📊 RoCoP Classification Summary")
+
+summary = pd.Series(labels).value_counts()
+
+st.write(summary)
+
+# =====================================================
+# DATA TABLE
+# =====================================================
+st.subheader("📁 Simulation Data")
 
 df = pd.DataFrame({
     "Time (Hour)": time_hours,
@@ -235,21 +290,12 @@ df = pd.DataFrame({
 st.dataframe(df, use_container_width=True)
 
 # =====================================================
-# CLASSIFICATION SUMMARY
-# =====================================================
-st.subheader("RoCoP Classification Summary")
-
-summary = pd.Series(labels).value_counts()
-
-st.write(summary)
-
-# =====================================================
-# DOWNLOAD CSV
+# DOWNLOAD BUTTON
 # =====================================================
 csv = df.to_csv(index=False).encode("utf-8")
 
 st.download_button(
-    "Download CSV Data",
+    "⬇️ Download CSV Data",
     csv,
     "pv_farm_data.csv",
     "text/csv"
