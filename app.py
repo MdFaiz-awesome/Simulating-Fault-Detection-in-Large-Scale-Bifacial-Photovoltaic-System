@@ -583,28 +583,15 @@ elif st.session_state.page == "part_c":
     fig3.update_layout(title="RoCoP Analysis")
     st.plotly_chart(fig3, use_container_width=True)
 
-# =========================
-# TABLE
-# =========================
-df = pd.DataFrame({
-    "Time": time_hours,
-    "Total Power": P_total,
-    "Area A": P_A,
-    "Area B": P_B,
-    "Area C": P_C
-})
+    # =========================
+    # TABLE
+    # =========================
+    df = pd.DataFrame({
+        "Time": time_hours,
+        "Total Power": P_total,
+        "A": P_A,
+        "B": P_B,
+        "C": P_C
+    })
 
-st.dataframe(df, use_container_width=True)
-
-# =========================
-# DOWNLOAD CSV (FIXED)
-# =========================
-csv = df.to_csv(index=False).encode("utf-8")
-
-st.download_button(
-    label="📥 Download CSV",
-    data=csv,
-    file_name="pv_fault_data.csv",
-    mime="text/csv",
-    use_container_width=True
-)
+    st.dataframe(df, use_container_width=True)
