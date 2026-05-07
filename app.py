@@ -10,7 +10,7 @@ import plotly.graph_objects as go
 # PAGE CONFIG
 # -----------------------------------------------------
 st.set_page_config(
-    page_title="PV Sizing Tool",
+    page_title="Large Scale PV Tool",
     page_icon="🔆",
     layout="wide"
 )
@@ -72,10 +72,10 @@ if st.session_state.page == "welcome":
         background:rgba(255,255,255,0.85); padding:20px; 
         border-radius:12px; box-shadow:2px 2px 8px rgba(0,0,0,0.2);">
             <h1 style='font-size:38px; font-weight:bold;'>
-                Interactive Online Sizing Framework for Grid-Connected Photovoltaic Systems
+                Interactive Online Simulating Fault Detection in Large Scale Bifacial Photovoltaic Systems
             </h1>
             <p style='font-size:20px;'>
-                Hello! This tool will assist you in designing and sizing your PV modules.
+                Hello! This tool will assist you in designing and simulating fault towards your PV farm.
             </p>
         </div>
         """,
@@ -85,7 +85,7 @@ if st.session_state.page == "welcome":
     st.markdown("<br><br>", unsafe_allow_html=True)
 
     # START BUTTON
-    if st.button("👉 Start Sizing Tool", use_container_width=True):
+    if st.button("👉 Start Now", use_container_width=True):
         with st.spinner("Loading PV Sizing Dashboard..."):
             time.sleep(2)
         switch_to_dimensioning()
