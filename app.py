@@ -456,10 +456,17 @@ if st.session_state.get("page") == "part_b":
         </div>
         """, unsafe_allow_html=True)
     st.success(f"Total Strings Required = {result_config}  |  Selected Modules in Series = {ns_rec}")
+
+if st.button("👉 Continue to Part C", use_container_width=True):
+    st.session_state.best_count = best_count
+    st.session_state.rated_power = rated_power
+    st.session_state.page = "part_c"
+    st.rerun()
    
 # =====================================================
 # PART C: FAULT SIMULATION (RoCoP)
 # =====================================================
+dt = max(dt, 1)
 elif st.session_state.page == "part_c":
 
     st.markdown("<h1 style='text-align:center;'>Part C: Simulating Fault Detection in Large-Scale Photovoltaic System</h1>", unsafe_allow_html=True)
@@ -473,12 +480,12 @@ elif st.session_state.page == "part_c":
     # =========================
     # LOAD DATA FROM PART A
     # =========================
-    best_count = st.session_state.get("best_count", None)
-    rated_power = st.session_state.get("rated_power", None)
+best_count = st.session_state.get("best_count")
+rated_power = st.session_state.get("rated_power")
 
-    if best_count is None or rated_power is None:
-        st.error("No data from Part A. Please restart simulation.")
-        st.stop()
+if best_count is None or rated_power is None:
+    st.error("Missing Part A data. Please restart.")
+    st.stop()
 
     # =========================
     # SIDEBAR SETTINGS
@@ -532,8 +539,11 @@ elif st.session_state.page == "part_c":
     # =========================
     # RoCoP
     # =========================
+  if len(P_total) > 1:
     R = np.abs(np.diff(P_total)) / dt
-    tR = time_hours[1:]
+else:
+    R = np.array([0])
+    tR = time_hours[1:] if len(time_hours) > 1 else time_hours
 
     # thresholds
     T1 = np.max(R[:min(100, len(R))]) * 1.5 if len(R) > 1 else 0
