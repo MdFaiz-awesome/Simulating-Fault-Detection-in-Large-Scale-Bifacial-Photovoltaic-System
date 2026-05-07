@@ -595,9 +595,3 @@ elif st.session_state.page == "part_c":
     })
 
     st.dataframe(df, use_container_width=True)
-
-# ========================= 
-# DOWNLOAD 
-# ========================= 
-csv = df.to_csv(index=False).encode("utf-8") 
-st.download_button("Download CSV", csv, "pv_fault_data.csv","text/csv")
