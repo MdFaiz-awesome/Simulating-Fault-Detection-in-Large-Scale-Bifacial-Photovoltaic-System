@@ -1,302 +1,537 @@
+import streamlit as st
+import math
+import time
+import base64
 import numpy as np
 import pandas as pd
-import streamlit as st
 import plotly.graph_objects as go
 
-# =====================================================
+# -----------------------------------------------------
 # PAGE CONFIG
-# =====================================================
+# -----------------------------------------------------
 st.set_page_config(
-    page_title="PV Farm RoCoP Dashboard",
-    page_icon="⚡",
+    page_title="PV Sizing Tool",
+    page_icon="🔆",
     layout="wide"
 )
 
-# =====================================================
-# TITLE
-# =====================================================
-st.title("⚡ PV Farm RoCoP Monitoring Dashboard")
-st.markdown("Interactive Simulation for Large Scale Bifacial Photovoltaic Fault Detection")
+# -----------------------------------------------------
+# SESSION STATE
+# -----------------------------------------------------
+if "page" not in st.session_state:
+    st.session_state.page = "welcome"
+
+def switch_to_dimensioning():
+    st.session_state.page = "dimensioning"
+
+def switch_to_part_b():
+    st.session_state.page = "part_b"
+
+# -----------------------------------------------------
+# SET FIXED BACKGROUND IMAGE (ONLY FOR HOME PAGE)
+# -----------------------------------------------------
+def apply_background():
+    try:
+        with open("bg.png", "rb") as img_file: 
+            encoded = base64.b64encode(img_file.read()).decode()
+            st.markdown(
+                f"""
+                <style>
+                .stApp {{
+                    background-image: url("data:image/jpg;base64,{encoded}");
+                    background-size: cover;
+                    background-position: center;
+                    background-attachment: fixed;
+                }}
+                </style>
+                """,
+                unsafe_allow_html=True
+            )
+    except FileNotFoundError:
+        st.markdown(
+            """
+            <style>
+            .stApp {
+                background-color: #f2f2f2;
+            }
+            </style>
+            """,
+            unsafe_allow_html=True
+        )
 
 # =====================================================
-# SIDEBAR SETTINGS
+# PAGE 1: WELCOME PAGE
 # =====================================================
-st.sidebar.header("⚙️ Simulation Settings")
+if st.session_state.page == "welcome":
 
-start_hour = st.sidebar.number_input("Start Hour", value=9.0)
-end_hour = st.sidebar.number_input("End Hour", value=10.0)
+    apply_background()
 
-dt = st.sidebar.selectbox(
-    "Time Resolution (seconds)",
-    [1, 5, 10],
-    index=0
-)
+    st.markdown(
+        """
+        <div style="text-align:center; padding-top:40px; 
+        background:rgba(255,255,255,0.85); padding:20px; 
+        border-radius:12px; box-shadow:2px 2px 8px rgba(0,0,0,0.2);">
+            <h1 style='font-size:38px; font-weight:bold;'>
+                Interactive Online Sizing Framework for Grid-Connected Photovoltaic Systems
+            </h1>
+            <p style='font-size:20px;'>
+                Hello! This tool will assist you in designing and sizing your PV modules.
+            </p>
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
 
-fault_areas = st.sidebar.multiselect(
-    "Select Fault Areas",
-    ["A", "B", "C"],
-    default=["B"]
-)
+    st.markdown("<br><br>", unsafe_allow_html=True)
 
-fault_time = st.sidebar.slider(
-    "Fault Start Time",
-    min_value=float(start_hour),
-    max_value=float(end_hour),
-    value=9.5,
-    step=0.01
-)
-
-irradiance_fault = st.sidebar.slider(
-    "Fault Irradiance (W/m²)",
-    min_value=0,
-    max_value=1000,
-    value=200
-)
-
-noise_level = st.sidebar.slider(
-    "Noise Level (%)",
-    min_value=0.0,
-    max_value=1.0,
-    value=0.2
-) / 100
+    # START BUTTON
+    if st.button("👉 Start Sizing Tool", use_container_width=True):
+        with st.spinner("Loading PV Sizing Dashboard..."):
+            time.sleep(2)
+        switch_to_dimensioning()
+        st.rerun()
 
 # =====================================================
-# PV PARAMETERS
+# PAGE 2: DIMENSIONING PAGE (PART A)
 # =====================================================
-P_panel = 605
-alpha = -0.23 / 100
-T = 25
+elif st.session_state.page == "dimensioning":
 
-N_series = 160
-N_parallel = 84
+    st.markdown("<h1 style='text-align:center;'>📘 Dimensioning of PV Modules</h1>", unsafe_allow_html=True)
+    st.write("Follow the structured technical steps below to complete your PV sizing process.")
+    st.markdown("---")
 
-N_total = N_series * N_parallel
-N_area = N_total // 3
+    # -------------------------------------------------
+    # STEP 1 (BOX DESIGN)
+    # -------------------------------------------------
+    st.markdown(
+        """
+        <div style="padding:15px; border-radius:10px; 
+        background-color:#f7f9fc; border-left:6px solid #4A90E2;">
+            <h2>Step 1: Choose a PV Module</h2>
+            <p>Insert the module characteristics and performance factors below.</p>
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
+    st.markdown("<br>", unsafe_allow_html=True)
 
-P_area = N_area * P_panel
+    with st.container():
+        col1, col2 = st.columns(2)
 
-# =====================================================
-# TIME VECTOR
-# =====================================================
-time_seconds = np.arange(0, (end_hour - start_hour) * 3600, dt)
-time_hours = start_hour + time_seconds / 3600
+        # LEFT COLUMN
+        with col1:
+            st.markdown("### 🟦 Module Properties")
+            panel_length = st.number_input("Panel Length (m)", min_value=0.1, value=2.382)
+            panel_width = st.number_input("Panel Width (m)", min_value=0.1, value=1.134)
+            rated_power = st.number_input("Rated Power (W)", min_value=1, value=605)
+            isc_stc = st.number_input("Isc STC (A)", min_value=0.1, value=9.6)
+            isc_max_inv = st.number_input("Isc Max Inv (A)", min_value=0.1, value=15.0)
 
-# =====================================================
-# FUNCTIONS
-# =====================================================
-def irradiance_profile(area):
-    G = np.ones_like(time_hours) * 1000
+        # RIGHT COLUMN
+        with col2:
+            st.markdown("### 🟩 Temperature & Performance Factors")
+            T_coef = st.number_input("Temperature Coefficient (°C)", value=-0.28)
+            T_mod = st.number_input("Module Temperature (°C)", value=55)
+            T_src = st.number_input("Reference Temperature (°C)", value=25)
 
-    if area in fault_areas:
-        G[time_hours >= fault_time] = irradiance_fault
+            f_mm = st.number_input("Module mismatch, f_mm", value=0.98)
+            f_clean = st.number_input("Soiling, f_clean", value=0.97)
+            f_degrad = st.number_input("Degradation, f_degrad", value=0.97)
+            f_unshade = st.number_input("Shading, f_unshade", value=0.97)
+            eta_cable = st.number_input("Cable efficiency, η_cable", value=0.98)
+            eta_inv = st.number_input("Inverter efficiency, η_inv", value=0.99)
+            peak_sun_hours = st.number_input("Peak Sun Hours (h/day)", value=4.0)
 
-    return G
+    st.markdown("---")
 
+    # -------------------------------------------------
+    # AUTO CALCULATIONS
+    # -------------------------------------------------
+    panel_area = panel_length * panel_width
+    f_temp_ave = 1 + ((T_coef / 100) * (T_mod - T_src))
 
-def pv_power(G):
-    return P_area * (G / 1000) * (1 - alpha * (T - 25))
+    power_output = (rated_power * f_mm * f_temp_ave * f_degrad) / panel_area
 
+    yearly_energy = (
+        (peak_sun_hours * 365)
+        * rated_power
+        * f_mm
+        * f_temp_ave
+        * f_clean
+        * f_degrad
+        * f_unshade
+        * eta_cable
+        * eta_inv
+    ) / panel_area
 
-def rocop(P):
-    return np.abs(np.diff(P)) / dt
+    # Convert Wh → kWh
+    yearly_energy_kwh = yearly_energy / 1000
 
+    st.markdown(
+        """
+        <div style="padding:15px; border-radius:10px; background-color:#eef7f2; border-left:6px solid #28a745;">
+            <h2>Calculated Module Performance</h2>
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
 
-def classify(R, T1, T2):
-    labels = []
+    colA, colB = st.columns(2)
+    with colA:
+        st.metric("Panel Area (m²)", f"{panel_area:.3f}")
+        st.metric("f_temp-ave", f"{f_temp_ave:.4f}")
+    with colB:
+        st.metric("Power Output (W/m²)", f"{power_output:.3f}")
+        st.metric("Yearly Energy (kWh/m²/year)", f"{yearly_energy_kwh:.3f}")
 
-    for r in R:
-        if r < T1:
-            labels.append("Normal")
-        elif r < T2:
-            labels.append("Shading")
-        else:
-            labels.append("Fault")
+    st.markdown("---")
 
-    return labels
+    # -------------------------------------------------
+    # STEP 2: ARCHITECTURE CONSTRAINT
+    # -------------------------------------------------
+    st.markdown(
+        """
+        <div style="padding:15px; border-radius:10px; 
+        background-color:#f7f9fc; border-left:6px solid #4A90E2;">
+            <h2>Step 2: Architecture Constraint</h2>
+            <p>Determine the maximum installable number of modules based on site geometry.</p>
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
 
+    colX, colY = st.columns(2)
+    with colX:
+        st.markdown("### 📐 Module Dimensions")
+        Wm = st.number_input("Width of Module, Wm (m)", value=panel_width)
+        Lm = st.number_input("Length of Module, Lm (m)", value=panel_length)
+    with colY:
+        st.markdown("### 📏 Site Layout")
+        delta = st.number_input("Inter-module gap, ∆ (m)", value=0.01)
+        site_width = st.number_input("Width of Site (m)", min_value=1.0, value=183.27)
+        site_length = st.number_input("Length of Site (m)", min_value=1.0, value=202.18)
 
-# =====================================================
-# SIMULATION
-# =====================================================
-P_A = pv_power(irradiance_profile("A"))
-P_B = pv_power(irradiance_profile("B"))
-P_C = pv_power(irradiance_profile("C"))
-
-P_total = P_A + P_B + P_C
-
-# Add noise
-P_total += noise_level * P_total.max() * np.random.randn(len(P_total))
-
-# RoCoP
-R = rocop(P_total)
-t_rocop = time_hours[1:]
-
-# Threshold
-R_normal_sample = R[:100]
-
-T1 = np.max(R_normal_sample) * 1.5
-T2 = T1 * 5
-
-labels = classify(R, T1, T2)
-
-# =====================================================
-# KPI SECTION
-# =====================================================
-st.subheader("📌 System Overview")
-
-col1, col2, col3, col4 = st.columns(4)
-
-col1.metric("Total Panels", f"{N_total:,}")
-col2.metric("Rated Capacity", f"{(N_total * P_panel)/1e6:.2f} MW")
-col3.metric("Fault Areas", ", ".join(fault_areas) if fault_areas else "None")
-col4.metric("Max RoCoP", f"{np.max(R):,.0f} W/s")
-
-# =====================================================
-# GRAPH 1 TOTAL POWER
-# =====================================================
-fig1 = go.Figure()
-
-fig1.add_trace(go.Scatter(
-    x=time_hours,
-    y=P_total,
-    mode="lines",
-    name="Total Power"
-))
-
-fig1.add_vline(
-    x=fault_time,
-    line_dash="dash",
-    line_color="red"
-)
-
-fig1.update_layout(
-    title="Total PV Farm Power",
-    xaxis_title="Time (Hour)",
-    yaxis_title="Power (W)",
-    hovermode="x unified"
-)
-
-st.plotly_chart(fig1, use_container_width=True)
-
-# =====================================================
-# GRAPH 2 AREA POWER
-# =====================================================
-fig2 = go.Figure()
-
-fig2.add_trace(go.Scatter(
-    x=time_hours,
-    y=P_A,
-    mode="lines",
-    name="Area A"
-))
-
-fig2.add_trace(go.Scatter(
-    x=time_hours,
-    y=P_B,
-    mode="lines",
-    name="Area B"
-))
-
-fig2.add_trace(go.Scatter(
-    x=time_hours,
-    y=P_C,
-    mode="lines",
-    name="Area C"
-))
-
-fig2.add_vline(
-    x=fault_time,
-    line_dash="dash",
-    line_color="red"
-)
-
-fig2.update_layout(
-    title="PV Farm Power by Area",
-    xaxis_title="Time (Hour)",
-    yaxis_title="Power (W)",
-    hovermode="x unified"
-)
-
-st.plotly_chart(fig2, use_container_width=True)
-
-# =====================================================
-# GRAPH 3 ROCOP
-# =====================================================
-fig3 = go.Figure()
-
-fig3.add_trace(go.Scatter(
-    x=t_rocop,
-    y=R,
-    mode="lines",
-    name="RoCoP"
-))
-
-fig3.add_vline(
-    x=fault_time,
-    line_dash="dash",
-    line_color="red"
-)
-
-fig3.update_layout(
-    title="RoCoP Analysis",
-    xaxis_title="Time (Hour)",
-    yaxis_title="RoCoP (W/s)",
-    hovermode="x unified"
-)
-
-st.plotly_chart(fig3, use_container_width=True)
-
-# =====================================================
-# FAULT STATUS
-# =====================================================
-st.subheader("⚠️ Fault Status")
-
-status_data = []
-
-for area in ["A", "B", "C"]:
-    if area in fault_areas:
-        status = "FAULT"
+    st.markdown("---")
+    orientation = st.selectbox("PV Installation Orientation", ["Landscape", "Portrait"])
+    if orientation == "Landscape":
+        N_up = math.floor(site_width / (Wm + delta))
+        N_across = math.floor(site_length / (Lm + delta))
     else:
-        status = "NORMAL"
+        N_up = math.floor(site_width / (Lm + delta))
+        N_across = math.floor(site_length / (Wm + delta))
+    N_max = N_up * N_across
 
-    status_data.append([area, status])
+    st.success(
+        f"### 📊 Orientation: **{orientation}**\n- Modules Upwards: **{N_up}**  \n- Modules Across: **{N_across}**  \n- **Total Installable PV Modules: {N_max}**"
+    )
 
-status_df = pd.DataFrame(status_data, columns=["Area", "Status"])
+    # =====================================================
+    # STEP 3: BEST ORIENTATION & FINAL SYSTEM PERFORMANCE
+    # =====================================================
+    N_landscape_up = math.floor(site_width / (Wm + delta))
+    N_landscape_across = math.floor(site_length / (Lm + delta))
+    N_landscape = N_landscape_up * N_landscape_across
+    N_portrait_up = math.floor(site_width / (Lm + delta))
+    N_portrait_across = math.floor(site_length / (Wm + delta))
+    N_portrait = N_portrait_up * N_portrait_across
 
-st.table(status_df)
+    if N_landscape >= N_portrait:
+        best_orientation = "Landscape"
+        best_count = N_landscape
+    else:
+        best_orientation = "Portrait"
+        best_count = N_portrait
+
+    st.info(
+        f"### 🏆 Recommended Orientation: **{best_orientation}**\n- Maximum installable PV modules: **{best_count}**"
+    )
+
+    final_power_output_total = power_output * best_count
+    final_yearly_energy_total = yearly_energy_kwh * best_count
+
+    st.markdown(
+        """
+        <div style="padding:15px; border-radius:10px; 
+        background-color:#e8f5ff; border-left:6px solid #007BFF;">
+            <h2>Final System Performance</h2>
+            <p>The following results represent the full system output based on the optimal PV orientation and maximum number of installable modules.</p>
+        </div>
+        """, unsafe_allow_html=True
+    )
+
+    colF1, colF2 = st.columns(2)
+    with colF1:
+        st.metric("Total Power Output (W)", f"{final_power_output_total:,.2f}")
+    with colF2:
+        st.metric("Total Yearly Energy (kWh/year)", f"{final_yearly_energy_total:,.2f}")
+
+    st.markdown("<br>", unsafe_allow_html=True)
+    if st.button("👉 Continue to Part B", use_container_width=True):
+        # Save Part A results for Part B
+        st.session_state.best_count = best_count
+        st.session_state.final_power_output_total = final_power_output_total
+        st.session_state.yearly_energy_kwh = final_yearly_energy_total
+        st.session_state.rated_power = rated_power
+        st.session_state.page = "part_b"
+        st.rerun()
 
 # =====================================================
-# CLASSIFICATION SUMMARY
+# PART B: SIZING WITH CENTRAL INVERTER
 # =====================================================
-st.subheader("📊 RoCoP Classification Summary")
+if st.session_state.get("page") == "part_b":
+    st.markdown("<h1 style='text-align:center;'>Part B: Sizing with Central Inverter</h1>", unsafe_allow_html=True)
+    st.markdown("---")
 
-summary = pd.Series(labels).value_counts()
+    # BUTTON BACK TO PART A
+    if st.button("⬅️ Back to Part A", use_container_width=True):
+        st.session_state.page = "dimensioning"
+        st.rerun()
 
-st.write(summary)
+    # AMBIL DATA DARI PART A
+    best_count = st.session_state.get("best_count", 0)
+    final_power_output_total = st.session_state.get("final_power_output_total", 0)
+    yearly_energy_kwh = st.session_state.get("yearly_energy_kwh", 0)
+    rated_power = st.session_state.get("rated_power", 550)
 
-# =====================================================
-# DATA TABLE
-# =====================================================
-st.subheader("📁 Simulation Data")
+    # =========================
+    # SUMMARY OF PART A
+    # =========================
+    st.markdown(
+        """
+        <div style="padding:15px; border-radius:10px; 
+        background-color:#eef7f2; border-left:6px solid #28a745;">
+            <h2>Summary of Part A</h2>
+        </div>
+        """, unsafe_allow_html=True
+    )
+    colA, colB, colC = st.columns(3)
+    with colA:
+        st.metric("Total PV Modules", f"{best_count}")
+    with colB:
+        st.metric("Total Peak Power Output (W)", f"{final_power_output_total:,.2f}")
+    with colC:
+        st.metric("Total Yearly Energy (kWh/year)", f"{yearly_energy_kwh:,.2f}")
+    st.markdown("---")
 
-df = pd.DataFrame({
-    "Time (Hour)": time_hours,
-    "Total Power (W)": P_total,
-    "Area A (W)": P_A,
-    "Area B (W)": P_B,
-    "Area C (W)": P_C
-})
+    # =====================================================
+    # STEP 1: Decide DC/AC Ratio
+    # =====================================================
+    st.markdown(
+        """
+        <div style="padding:15px; border-radius:10px; 
+        background-color:#f7f9fc; border-left:6px solid #4A90E2;">
+            <h2>Step 1: Decide DC/AC Ratio</h2>
+        </div>
+        """, unsafe_allow_html=True
+    )
+    dc_ac_ratio = st.number_input("Enter DC/AC Ratio (fi)", value=1.11)
 
-st.dataframe(df, use_container_width=True)
+    # =====================================================
+    # STEP 2: Determine The Suitable Inverter
+    # =====================================================
+    st.markdown(
+        """
+        <div style="padding:15px; border-radius:10px; 
+        background-color:#f7f9fc; border-left:6px solid #4A90E2;">
+            <h2>Step 2: Determine The Suitable Inverter</h2>
+        </div>
+        """, unsafe_allow_html=True
+    )
+    num_pv_modules = st.number_input("Enter Number of PV Modules", value=best_count)
+    pv_module_power = st.number_input("Enter PV Module Power (W)", value=rated_power)
+    req_inv_power = (pv_module_power * num_pv_modules) / dc_ac_ratio
+    st.success(f"Required Inverter Nominal Power > {req_inv_power:,.2f} W")
 
-# =====================================================
-# DOWNLOAD BUTTON
-# =====================================================
-csv = df.to_csv(index=False).encode("utf-8")
+    # =====================================================
+    # STEP 3 & 4: Determine String Sizing Range
+    # =====================================================
+    st.markdown(
+        """
+        <div style="padding:15px; border-radius:10px; 
+        background-color:#fff8e6; border-left:6px solid #f5a623;">
+            <h2>Step 3 & 4: Determine String Sizing Range (Ns min & Ns max)</h2>
+            <h4>Module and Inverter Datasheet Parameter</h4>
+        </div>
+        """, unsafe_allow_html=True
+    )
+    col1, col2 = st.columns(2)
+    with col1:
+        voc_stc = st.number_input("V_oc STC (V)", value=48.18)
+        vp_stc = st.number_input("V_p STC (V)", value=40.31)
+        beta_voc = st.number_input("Beta Voc (%/°C)", value=-0.23)
+        beta_vpmax = st.number_input("Beta Vpmax (%/°C)", value=-0.3)
+        t_mod_min = st.number_input("T_mod min (°C)", value=20)
+        t_mod_max = st.number_input("T_mod max (°C)", value=75)
+        t_stc = 25
+    with col2:
+        v_max_abs_inv = st.number_input("Inverter V_max-abs-inv (V)", value=1500)
+        v_max_mppt_inv = st.number_input("Inverter V_max-mppt-inv (V)", value=1500)
+        v_sys_max = st.number_input("Module V_sys-max (V)", value=1500)
+        v_min_mppt_inv = st.number_input("Inverter V_min-mppt-inv (V)", value=938)
+        v_start_inv = st.number_input("V_start-inv (V)", value=950)
+        efficiency = st.number_input("Efficiency", value=0.99)
 
-st.download_button(
-    "⬇️ Download CSV Data",
-    csv,
-    "pv_farm_data.csv",
-    "text/csv"
-)
+    # Formula untuk Ns_max & Ns_min
+    voc_max = voc_stc * (1 + (beta_voc / 100) * (t_mod_min - t_stc))
+    ns_max_abs = math.floor(v_max_abs_inv / voc_max)
+    vpmax_max = vp_stc * (1 + (beta_vpmax / 100) * (t_mod_min - t_stc))
+    ns_max_mppt = math.floor(v_max_mppt_inv / vpmax_max)
+    ns_max_pv = math.floor(v_sys_max / voc_max)
+    ns_max = min(ns_max_abs, ns_max_mppt, ns_max_pv)
+
+    vpmax_min = vp_stc * (1 + (beta_vpmax / 100) * (t_mod_max - t_stc))
+    ns_min_mppt = math.ceil(v_min_mppt_inv / (vpmax_min * efficiency))
+    voc_min = voc_stc * (1 + (beta_voc / 100) * (t_mod_max - t_stc))
+    ns_min_start = math.ceil(v_start_inv / voc_min)
+    ns_min = max(ns_min_mppt, ns_min_start)
+
+    st.info(f"Final Ns_max = {ns_max}  |  Final Ns_min = {ns_min}  |  Range for String Sizing = {ns_min} - {ns_max}")
+
+    # =====================================================
+    # STEP 5: Determine Optimum PV Modules in Series (Ns_rec)
+    # =====================================================
+    st.markdown(
+        """
+        <div style="padding:15px; border-radius:10px; 
+        background-color:#f7f9fc; border-left:6px solid #4A90E2;">
+            <h2>Step 5: Determine the Optimum PV Modules in Series (Ns_rec)</h2>
+            <h4>Key Parameter for Optimum Calculation</h4>
+        </div>
+        """, unsafe_allow_html=True
+    )
+    vrated_inv = st.number_input("Inverter Vrated (V)", value=1100)
+    vmax_mppt_inv = st.number_input("Vmax_mppt-inv (V)", value=1500)
+    vmin_mppt_inv = st.number_input("Vmin_mppt-inv (V)", value=938)
+
+    w_percent = ((vrated_inv - vmin_mppt_inv) / (vmax_mppt_inv - vmin_mppt_inv)) * 100
+    ns_rec = math.floor(ns_min + (w_percent / 100) * (ns_max - ns_min))
+
+    st.info(f"W% Result = {w_percent:.2f}%  |  Recommendation Modules Result (Ns_rec) = {ns_rec}")
+
+    # =====================================================
+    # STEP 6: Maximum Number of Strings per MPPT
+    # =====================================================
+    st.markdown(
+        """
+        <div style="padding:15px; border-radius:10px; 
+        background-color:#fff8e6; border-left:6px solid #f5a623;">
+            <h2>Step 6: Determine the Maximum Number of Strings per MPPT</h2>
+            <h4>Key Parameters for Maximum String Calculation</h4>
+        </div>
+        """, unsafe_allow_html=True)
+    isc_max_mppt = st.number_input("Isc_max-mppt (A)", value=15.0)
+    isc_stc = st.number_input("Isc_STC (A)", value=9.6)
+    sf1 = st.number_input("Safety Factor (Sf1)", value=1.25)
+    np_max_mppt = math.floor(isc_max_mppt / (isc_stc * sf1))
+    st.info(f"Final Maximum Strings Result = {np_max_mppt}")
+
+    # =====================================================
+    # STEP 7: Number of Strings per MPPT
+    # =====================================================
+    st.markdown(
+        """
+        <div style="padding:15px; border-radius:10px; 
+        background-color:#f7f9fc; border-left:6px solid #4A90E2;">
+            <h2>Step 7: Determine the Number of Strings per MPPT</h2>
+            <h4>Inverter and Array Configuration Parameters</h4>
+        </div>
+        """, unsafe_allow_html=True)
+    nt = st.number_input("Total PV Modules per Inverter (Nt)", value=best_count)
+    nmppt = ns_rec
+    result_config = math.ceil(nt / nmppt)
+    st.info(f"Result Configuration = {result_config}")
+
+    # =====================================================
+    # STEP 8: Final PV Array Configuration
+    # =====================================================
+    st.markdown(
+        """
+        <div style="padding:15px; border-radius:10px; 
+        background-color:#eef7f2; border-left:6px solid #28a745;">
+            <h2>Step 8: Final PV Array Configuration</h2>
+            <h4>Final Configuration Summary</h4>
+        </div>
+        """, unsafe_allow_html=True)
+    st.success(f"Total Strings Required = {result_config}  |  Selected Modules in Series = {ns_rec}")
+    st.set_page_config(page_title='Large Scale PV Tool', page_icon='🔆', layout='wide')
+
+if 'page' not in st.session_state:
+    st.session_state.page='part_c'
+
+if st.session_state.page=='part_c':
+    st.title('Part 3: Simulating Fault Detection in Large-Scale Photovoltaic System')
+    st.markdown('Integrated PV Farm RoCoP Dashboard')
+
+    best_count = st.session_state.get('best_count', 13440)
+    rated_power = st.session_state.get('rated_power', 605)
+
+    st.sidebar.header('Simulation Settings')
+    start_hour = st.sidebar.number_input('Start Hour', value=9.0)
+    end_hour = st.sidebar.number_input('End Hour', value=10.0)
+    dt = st.sidebar.selectbox('Time Resolution', [1,5,10], index=0)
+    fault_areas = st.sidebar.multiselect('Fault Areas', ['A','B','C'], default=['B'])
+    fault_time = st.sidebar.slider('Fault Start Time', float(start_hour), float(end_hour), 9.5, 0.01)
+    irradiance_fault = st.sidebar.slider('Fault Irradiance', 0,1000,200)
+    noise_level = st.sidebar.slider('Noise %',0.0,1.0,0.2)/100
+
+    N_total = best_count
+    N_area = max(N_total//3,1)
+    P_area = N_area*rated_power
+    alpha=-0.23/100
+    T=25
+
+    time_seconds=np.arange(0,(end_hour-start_hour)*3600,dt)
+    time_hours=start_hour+time_seconds/3600
+
+    def irr(area):
+        G=np.ones_like(time_hours)*1000
+        if area in fault_areas:
+            G[time_hours>=fault_time]=irradiance_fault
+        return G
+
+    def pwr(G):
+        return P_area*(G/1000)*(1-alpha*(T-25))
+
+    P_A=pwr(irr('A'))
+    P_B=pwr(irr('B'))
+    P_C=pwr(irr('C'))
+    P_total=P_A+P_B+P_C
+    P_total += noise_level*np.max(P_total)*np.random.randn(len(P_total))
+
+    R=np.abs(np.diff(P_total))/dt
+    tR=time_hours[1:]
+    T1=np.max(R[:min(100,len(R))])*1.5 if len(R)>0 else 0
+    T2=T1*5
+
+    st.subheader('System Overview')
+    c1,c2,c3,c4=st.columns(4)
+    c1.metric('Total Panels', f'{N_total:,}')
+    c2.metric('Plant Size', f'{(N_total*rated_power)/1e6:.2f} MW')
+    c3.metric('Fault Areas', ', '.join(fault_areas) if fault_areas else 'None')
+    c4.metric('Max RoCoP', f'{np.max(R):,.0f}' if len(R)>0 else '0')
+
+    fig=go.Figure()
+    fig.add_trace(go.Scatter(x=time_hours,y=P_total,name='Total Power'))
+    fig.add_vline(x=fault_time,line_dash='dash',line_color='red')
+    fig.update_layout(title='Total PV Power',hovermode='x unified')
+    st.plotly_chart(fig,use_container_width=True)
+
+    fig2=go.Figure()
+    fig2.add_trace(go.Scatter(x=time_hours,y=P_A,name='Area A'))
+    fig2.add_trace(go.Scatter(x=time_hours,y=P_B,name='Area B'))
+    fig2.add_trace(go.Scatter(x=time_hours,y=P_C,name='Area C'))
+    fig2.add_vline(x=fault_time,line_dash='dash',line_color='red')
+    fig2.update_layout(title='Power by Area',hovermode='x unified')
+    st.plotly_chart(fig2,use_container_width=True)
+
+    fig3=go.Figure()
+    fig3.add_trace(go.Scatter(x=tR,y=R,name='RoCoP'))
+    fig3.add_vline(x=fault_time,line_dash='dash',line_color='red')
+    fig3.update_layout(title='RoCoP Analysis',hovermode='x unified')
+    st.plotly_chart(fig3,use_container_width=True)
+
+    df=pd.DataFrame({'Time':time_hours,'Total Power':P_total,'Area A':P_A,'Area B':P_B,'Area C':P_C})
+    st.dataframe(df,use_container_width=True)
+
+    csv=df.to_csv(index=False).encode('utf-8')
+    st.download_button('Download CSV',csv,'pv_fault_data.csv','text/csv')
