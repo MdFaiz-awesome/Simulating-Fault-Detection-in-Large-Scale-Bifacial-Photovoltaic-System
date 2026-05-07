@@ -453,8 +453,7 @@ if st.session_state.get("page") == "part_b":
         </div>
         """, unsafe_allow_html=True)
     st.success(f"Total Strings Required = {result_config}  |  Selected Modules in Series = {ns_rec}")
-    st.set_page_config(page_title='Large Scale PV Tool', page_icon='🔆', layout='wide')
-
+    
 if 'page' not in st.session_state:
     st.session_state.page='part_c'
 
