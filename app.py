@@ -75,7 +75,7 @@ if st.session_state.page == "welcome":
         background:rgba(255,255,255,0.85); padding:20px; 
         border-radius:12px; box-shadow:2px 2px 8px rgba(0,0,0,0.2);">
             <h1 style='font-size:38px; font-weight:bold;'>
-                Interactive Online Simulating Fault Detection in Large Scale Bifacial Photovoltaic Systems
+                Interactive Online Simulating Fault Detection in Large Scale Bifacial Photovoltaic Farm
             </h1>
             <p style='font-size:20px;'>
                 Hello! This tool will assist you in designing and simulate fault in your PV farm.
